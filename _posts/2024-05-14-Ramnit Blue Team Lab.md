@@ -85,7 +85,7 @@ Now that we know the PID of the malware, we can dig deeper. We'll dump the malwa
 ```
 
 ## Vurus total 
-We'll submit the hash to VirusTotal to see what it says. Turns out, it's a very dangerous malware, and lots of security programs are flagging it.
+We'll submit the hash to VirusTotal to see what it says. Turns out, it's a very dangerous malware, and lots of security programs are flagging it
 ![Alt text](/assets/img/cb/Ramnit/rb5.png)
 
 VirusTotal also tells us when the malware was first seen (2024-02-03 00:02:57) and shows us domains linked to this malware, which helps us stop similar attacks in the future.
