@@ -2,7 +2,7 @@
 title: SQL Injection Attack
 author: siresire
 date: 2025-10-28 06:10:00 +0800
-categories: [Seed, Web-Security, ]
+categories: [Seed, Web-Security]
 tags: [Computer Security,XSS,JavaScript,burp]
 render_with_liquid: false
 ---

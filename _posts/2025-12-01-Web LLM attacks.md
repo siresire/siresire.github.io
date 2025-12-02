@@ -1,7 +1,7 @@
 ---
 title: Web LLM attacks
 author: siresire
-date: 2025-01-12 06:10:00 +0800
+date: 2025-12-01 06:10:00 +0800
 categories: [CEH, LLMs, AI, ]
 tags: [Red Teaming]
 render_with_liquid: false
