@@ -1,8 +1,8 @@
 ---
-title: Sockets I
+title: Sockets UDP & TCP
 author: siresire
 date: 2026-02-17 06:10:00 +0800
-categories: [Networking]
+categories: [Networking, Security Labs]
 tags: [Basics,Wireshark,nc]
 render_with_liquid: false
 ---
