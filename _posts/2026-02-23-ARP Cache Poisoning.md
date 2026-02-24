@@ -1,7 +1,7 @@
 ---
 title: ARP Cache Poisoning
 author: siresire
-date: 2025-03-23 18:10:00 +0800
+date: 2026-02-23 18:10:00 +0800
 categories: [Networking, Security Labs]
 tags: [ARP, MITM, Scapy, Wireshark, tcpdump]
 render_with_liquid: false
@@ -124,11 +124,11 @@ sendp(pkt)
 
 After sending the packet, the ARP cache mapping can be altered so that the victim associates the spoofed IP with the attacker’s MAC address.
 
-![alt text](image.png)
+![alt text](/assets/img/seed/networking/ARP/image.png)
 
 From the capture and ARP table output, the MAC address associated with the target IP changed to the attacker’s MAC.
 
-![alt text](image-1.png)
+![alt text](/assets/img/seed/networking/ARP/image-1.png)
 
 The screenshots above also show the traffic in **Wireshark** and **tcpdump**, confirming that the spoofed ARP traffic was seen on the network.
 
@@ -178,7 +178,7 @@ sendp(pkt, verbose=False)
 
 The packet was visible in Wireshark, but in this setup it did **not** create or update the expected ARP entry on the victim host.
 
-![alt text](image-2.png)
+![alt text](/assets/img/seed/networking/ARP/image-2.png)
 
 ---
 
@@ -186,7 +186,7 @@ The packet was visible in Wireshark, but in this setup it did **not** create or 
 
 In this task, **A** and **B** communicate over **Telnet**, and **M** performs ARP poisoning so traffic flows through the attacker.
 
-![alt text](image-3.png)
+![alt text](/assets/img/seed/networking/ARP/image-3.png)
 
 ### Step 1: Bidirectional ARP Poisoning
 
@@ -377,7 +377,7 @@ pkt = sniff(iface='eth0', filter=f, prn=spoof_pkt)
 
 The terminal appeared to hang during execution, but the MITM payload modification worked and results were observed.
 
-![alt text](image-4.png)
+![alt text](/assets/img/seed/networking/ARP/image-4.png)
 
 ### Important Conditions for This to Work
 
