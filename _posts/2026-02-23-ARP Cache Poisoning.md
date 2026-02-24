@@ -447,7 +447,7 @@ def spoof_pkt(pkt):
 f = 'tcp'
 pkt = sniff(iface='eth0', filter=f, prn=spoof_pkt)
 ```
-
+![alt text](/assets/img/seed/networking/ARP/image-5.png)
 ### Here
 
 * we successfully intercepted the Netcat TCP stream and the payload content could be modified before forwarding
