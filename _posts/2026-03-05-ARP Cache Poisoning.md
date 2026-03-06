@@ -12,7 +12,7 @@ render_with_liquid: false
 
 ## Objective
 
-The goal of this lab is to use packet spoofing to launch an **ARP cache poisoning attack** so that when two victim machines (**A** and **B**) communicate, their traffic is redirected through the attacker (**M**). This allows the attacker to become a **Man-In-The-Middle (MITM)** and potentially inspect or modify packets.
+The goal of this attack is to use packet spoofing to launch an **ARP cache poisoning attack** so that when two victim machines (**A** and **B**) communicate, their traffic is redirected through the attacker (**M**). This allows the attacker to become a **Man-In-The-Middle (MITM)** and potentially inspect or modify packets.
 
 This report focuses on:
 
