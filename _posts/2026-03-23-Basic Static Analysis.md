@@ -3,14 +3,24 @@ title: Basic Static Analysis
 author: siresire
 date: 2026-03-23 18:10:00 +0800
 categories: [Malware, SOC]
-tags: [floss,PEViewI,PEStudio,CAPA]
+tags: [floss, PEView, PEStudio, CAPA]
 render_with_liquid: false
+---
+
+
+# Basic Static Analysis
+
+In this lab, I explored out a basic static malware analysis on a suspicious Windows executable without running it. The goal was to collect useful indicators early, understand what the sample might be capable of, and build a solid starting point for deeper analysis later.
+
+At this stage, the focus is not to make final conclusions too fast. The point is to gather clues from hashes, strings, imports, PE structure, and rule-based tools like CAPA. From this first pass, the sample already shows signs of HTTP communication, file download behavior, process creation, and self-deletion.
 
 ---
 
-## Malware repositories and Virus total 
+## Malware Repositories and VirusTotal
 
-### 1st thing is to get the malware hashes that is md5 and sha256
+### First step: getting the malware hashes
+
+The first thing I did was generate the malware hashes, specifically the **SHA256** and **MD5** values. Hashes matter because they uniquely identify the file and make it easier to search for the same sample in malware repositories like VirusTotal.
 
 ```bash
 C:\Users\sire\Desktop
@@ -23,30 +33,33 @@ C:\Users\sire\Desktop
 
 C:\Users\sire\Desktop
 λ
-```
+````
 
-Checking the file hashes in Virustotal we can see alot of vendors flagged the has as malicous 
+After checking the file hashes in VirusTotal, it was clear that many security vendors already flagged the sample as malicious.
 
-![alt text](image-1.png)
+![alt text](/assets/img/TCM/001/image-1.png)
 
-57/72 security vendors flagged this file as malicious glagged this file as malicous and we also have other file signatures associated with the file as well as other names 
+In this case, **57 out of 72 vendors** detected the file as malicious. VirusTotal also showed other names and signatures associated with the sample, which is useful because one malware sample can be labeled differently depending on the vendor.
 
-![alt text](image-2.png)
+![alt text](/assets/img/TCM/001/image-2.png)
 
-Its also shows the mitre attack framework in relaiton to this malware  where by you can see in the indicators of removal , Drops batch files with force delete cmd 
-![alt text](image-3.png)
+VirusTotal also mapped some of the observed behavior to the **MITRE ATT&CK** framework. One thing that stood out was behavior related to **indicator removal**, specifically file deletion through force-delete commands.
 
-## String and floss
+![alt text](/assets/img/TCM/001/image-3.png)
 
-Definations 
+That is an early clue that the malware may try to remove traces of itself after execution.
 
-`string` => is an array of characters such as 'hello world" but computers will treat this string as an array of characters with an null byte at the end of the string 
-but in malware analysis 
+---
 
-Using the command floss , we can see important strings in relaiton to malware or somecommand or ddl file called so we take them down to build a triage just from the inital stage and we can't make any concusin because we need to dig in deeper to uderstand what the maleare really does 
+## Strings and FLOSS
+
+### What is a string?
+
+A **string** is just a sequence of characters, like `"hello world"`. In programming, strings usually end with a null byte. In malware analysis, strings are useful because they can reveal file paths, commands, DLLs, URLs, and other clues without having to execute the file.
+
+Using **FLOSS**, I was able to extract readable strings from the binary. At this point, strings help build a first triage picture, but they do not prove everything the malware does. They simply point us in directions worth investigating further.
 
 ```text
-
 FLARE FLOSS RESULTS (version v3.1.1-0-g3cd3ee6)
 
 +------------------------+-------------------------------------------------------------------------------+
@@ -59,7 +72,6 @@ FLARE FLOSS RESULTS (version v3.1.1-0-g3cd3ee6)
 |  tight strings         | 0                                                                             |
 |  decoded strings       | 0                                                                             |
 +------------------------+-------------------------------------------------------------------------------+
-
 
  ──────────────────────────── 
   FLOSS STATIC STRINGS (177)  
@@ -113,7 +125,6 @@ GetModuleHandleW
   </trustInfo>
 </assembly>
 
-
 .........
 
 +------------------------------------+
@@ -132,108 +143,170 @@ open
 ........
 ```
 
+A few strings stand out immediately:
+
+* `URLDownloadToFileW`
+* `InternetOpenUrlW`
+* `InternetOpenW`
+* `CreateProcessW`
+* `ShellExecuteW`
+* `cmd.exe /C ping 1.1.1.1 -n 1 -w 3000 > Nul & Del /f /q "%s"`
+* `http://huskyhacks.dev`
+* `Mozilla/5.0`
+* `C:\Users\Public\Documents\CR433101.dat.exe`
+
+From these strings, the sample appears to be capable of:
+
+* connecting to a URL
+* downloading a file
+* using HTTP-related functions
+* creating or launching another process
+* deleting itself or another file through the command line
+* writing an executable into a public documents path
+
+That already gives a strong first impression of downloader-like behavior.
+
+---
 
 ## Analyzing the Import Address Table
 
-Viewing this Malware using the file PEview we can see alot that is going on,the left side we can see Import address tables as well in the middle we can see like a portable executable with giantic array of bites in hexadecimal wiith the fist column having the ofset if the program where in relation to the beginning of the program did these bytes exists 
-![alt text](image-4.png)
+Using **PEview**, I inspected the executable more closely. On the left side, PEview shows structures such as the **Import Address Table**, while the middle section shows the raw executable bytes in hexadecimal form. The first column contains the **offset**, which tells us where the bytes are located relative to the beginning of the file.
 
-Every portable executable kinda follows the same format with the starting byte MZ which is a signature meaning a portable executable 
+![alt text](/assets/img/TCM/001/image-4.png)
 
+A Portable Executable usually follows a standard structure. One of the first things to notice is the **MZ** signature, which tells us this is a Windows PE file.
 
-In the IMAGE_NT_HEADERTS,IMAGE FILE HEADER ,we can see the date stamp of the malware when it was complied or build
+In the **IMAGE_NT_HEADERS** and **IMAGE_FILE_HEADER**, we can also see the timestamp that appears to show when the malware was compiled or built.
+
 ![alt text](image-5.png)
 
-The date sometime may say 1992, like compiled then it may not neccessary means it was compiled then but is a Balkan delfi compiler written in delfi and it will always have a timestamp of 1992
+That said, timestamps should be treated carefully. A timestamp does not always prove the real compile date. Some compilers are known to reuse old values, so this field can be misleading.
 
+---
 
-### IMAGE_SECTION_HEADER.text
+## IMAGE_SECTION_HEADER `.text`
+
 ![alt text](image-6.png)
 
-One thing to take into considertation is the Vitual size and the Size of Raw Data and compare the value written in hexadecimals 
+One important thing to compare here is the **Virtual Size** and the **Size of Raw Data**.
 
-- Virtual size = 15A1 (5537 in decimal) | amount of data on the disk then the vinary is run 
-- Size of the Raw data = 1600 (5632 in decimal)
+* **Virtual Size** = `15A1` = `5537` in decimal
+* **Size of Raw Data** = `1600` = `5632` in decimal
 
+These values are close to each other, which suggests that the size of the section on disk is roughly the same as the size of the section when loaded into memory.
 
-If these two values are similar we can ascertain that the size of raw data of the binary is roughly the same as the virtual size 
+If the raw size is much smaller than the virtual size, that can suggest there is more inside the binary than what we first see on disk, which is often a sign of packing.
 
-If then size of the raw data is much lower than the  virtual siz when it's is run, we can say there is more to this binary than is initially avaiblae to us and we can thing of a packed binary 
+For this particular section, the numbers are close enough that it does **not immediately suggest packing** based on this part alone.
 
-### SECTION. rdata/IMPORT Address Table 
+---
+
+## Section `.rdata` / Import Address Table
 
 ![alt text](image-7.png)
 
-The windows API 
+The Import Address Table helps show what Windows API functions the malware depends on. Looking at those imports gives a better idea of what the executable was designed to do.
+
+---
 
 ## Introduction to the Windows API
 
-API => Application programing interface 
+**API** stands for **Application Programming Interface**.
+
+In malware analysis, Windows APIs matter because malware uses them to interact with the operating system. That can include creating files, opening network connections, downloading content, launching processes, or deleting files.
 
 ![alt text](image-8.png)
 
-How the Windows API works 
-
+### How the Windows API works
 
 ![alt text](image-9.png)
 
-Checking the URLDownloadtoFile API 
-
+### Checking the `URLDownloadToFile` API
 
 ![alt text](image-10.png)
 
+The presence of `URLDownloadToFile` is important because it strongly suggests that this sample can **download a file from the internet onto the system**. That may point to a second-stage payload being dropped or retrieved later.
 
+This supports what was already seen in FLOSS and strengthens the idea that the malware may not be acting alone.
 
-We can see its that this file as malicous fucitons such as downloading files to the machine like second stage executable 
-
+---
 
 ## MalAPI.io
 
 [malapi.io](https://malapi.io/)
+
 <iframe src="https://malapi.io/" width="100%" height="600"></iframe>
 
-This is like putting together gtfobins and motre atack together for specific cataloging malicous windows API that can be used to identifiying samples of malware that those API are used maliciously in
+**MalAPI** is a useful reference for Windows APIs that are commonly associated with malicious behavior. It brings together malware analysis context and Windows API information in one place.
 
-In the documentation of the API, you will also get a malware sample in relaiton to those API that you can experiment with 
+A helpful part of the site is that it explains **why an API may matter during malware analysis**, and in some cases it also gives examples of malware families that use that API.
 
+That makes it useful when trying to understand why APIs like `URLDownloadToFile`, `CreateProcess`, or `ShellExecute` stand out during triage.
 
-## To Pack Or Not To Pack: Packed Malware Analysis
+---
 
-Packing is a compresion or encryption mechanism to make a piece of malware look different than it;s original source. Basically a compression of an existing malware
+## To Pack or Not to Pack: Packed Malware Analysis
 
-When you open a packed malware out the bat we can see UPX, basically which is a program used to pack malware 
+Packing is a compression or obfuscation method used to make malware look different from its original form. In simple terms, a packed malware sample hides or compresses its real content so that analysis becomes harder.
+
+A common clue is seeing **UPX**, which is a well-known packer.
+
 ![alt text](image-11.png)
 
-We still have a import address table which is quit small compared to the unpacked malware on the right hand size 
+Packed malware often has a much smaller Import Address Table compared to an unpacked sample, because many APIs are resolved later after the malware unpacks itself in memory.
+
 ![alt text](image-12.png)
 
-This means when the malware inflates back to it;s original program some API calls such as GetProcAddress and LoadLibratA are invoked to find other API calls 
+That is why APIs such as **GetProcAddress** and **LoadLibraryA** become important in packed malware. They help the program locate and load other APIs dynamically.
 
-Checking the size of the raw data compare to the virtual size is quite so large 
+Another clue comes from comparing **Size of Raw Data** with **Virtual Size**.
+
 ![alt text](image-13.png)
 
-Like here the size of Raw data is 0, meaning we are dealing with a packed malware
+If the raw size is extremely small compared to the virtual size, or even zero in a suspicious way, that can be a strong sign that the file is packed.
+
+So with packed malware, the file you first inspect may not reveal the full program immediately. You may need unpacking or dynamic analysis to expose the real behavior.
+
+---
 
 ## Combining Analysis Methods: PEStudio
 
+**PEStudio** is useful because it combines several analysis methods into one place. It quickly shows hashes, PE structure, libraries, suspicious strings, and indicators without executing the malware.
+
 ![alt text](image-14.png)
-When you load the malware in PEStudio we see the hashes of the file 
 
-we also see the MZ, like the fisrt-byte-text meaning is portable excecutable and it even has the CPU architecture which is a 32bit artchitectre 
+When I loaded the sample into PEStudio, I could again see the file hashes, the **MZ header**, and the CPU architecture, which in this case is **32-bit**.
 
-Malicous libralies or dlls 
+### Suspicious libraries and DLLs
+
 ![alt text](image-15.png)
 
-We can also the string that we already say from the floss command with even malicous API calls or command made out 
+PEStudio also highlights suspicious libraries and APIs. That helps draw attention to functions that are often abused by malware.
+
+### Strings and suspicious commands
 
 ![alt text](image-16.png)
 
+We can also see some of the same strings already found in FLOSS, including suspicious command-line patterns and API-related clues.
+
+At this point, several tools are telling the same story:
+
+* the file uses HTTP-related APIs
+* it can download content from a URL
+* it can create processes
+* it includes commands related to deletion behavior
+
+That consistency makes the early triage stronger.
+
+---
 
 ## CAPA
 
-CAPA  is a program that detects malicious capabilities in suspicious programs by using a set of rules. These rules are meant to be as high-level and human readable as possible. For example, Capa will examine a binary, identify an API call or string of interest, and match this piece of information against a rule that is called "receive data" or "connect to a URL". It translates the technical information in a binary into a simple, human-readable piece of information.
+**CAPA** is a tool that detects malicious capabilities in suspicious programs by using a set of rules. Instead of only showing low-level technical details, CAPA tries to translate what it sees into more human-readable capabilities.
 
-Running CAPA : 
+For example, CAPA can inspect a binary, identify an API call or string of interest, and match it to a rule such as **receive data** or **connect to a URL**.
+
+### Running CAPA
 
 ```bash
 λ capa Malware.Unknown.exe.malz                                                                           
@@ -275,13 +348,13 @@ Running CAPA :
 │ create process on Windows (2 matches)         │ host-interaction/process/create                  │      
 └───────────────────────────────────────────────┴──────────────────────────────────────────────────┘      
                                                                                                           
-                                                                                                          
 C:\Users\sire\Desktop                                                                                     
-λ                                                                                                         
+λ
 ```
- Immediately, we see some boiler-plate information about the binary, like its hashes. But then, we get some interesting high-level information about the program.
 
- The first block in the output labeled "ATT&CK Tactic - ATT&CK Technique" is worth examining in depth.
+Right away, CAPA gives useful high-level findings. Besides the file hashes and architecture, it highlights behaviors that matter most during triage.
+
+One important section is the **ATT&CK** mapping:
 
 ```bash
 ┌────────────────────────────────┬─────────────────────────────────────────────────────────────────┐      
@@ -290,14 +363,16 @@ C:\Users\sire\Desktop
 │ DEFENSE EVASION                │ Indicator Removal::File Deletion [T1070.004]                    │      
 └────────────────────────────────┴─────────────────────────────────────────────────────────────────┘    
 ```
-[So `T1070` means Adversaries may delete or modify artifacts generated within systems to remove evidence of their presence or hinder defenses. Various artifacts may be created by an adversary or something that can be attributed to an adversary’s actions](https://attack.mitre.org/techniques/T1070/)
 
-### Malware Behavioral Catalog (MBC)
-The next output is the Malware Behavioral Catalog (MBC) Objectives and Behaviors. This is a similar classification system to MITRE ATT&CK but focuses on malware specifically.
+This tells us CAPA identified behavior linked to **file deletion**, which matches the command strings already seen earlier.
 
-[The full MBC Matrix can be found here]( https://github.com/MBCProject/mbc-markdown#malware-objective-descriptions)
+---
 
-MBC translates MITRE ATT&CK items into terms that focus on the malware analysis use case. So understandably, we do get some useful output from this section:
+## Malware Behavioral Catalog (MBC)
+
+The next output is the **Malware Behavioral Catalog (MBC)**. MBC is similar to MITRE ATT&CK, but it is more focused on malware-specific behavior.
+
+The output here is very useful:
 
 ```bash
 ┌────────────────────────────┬─────────────────────────────────────────────────────────────────────┐      
@@ -313,14 +388,22 @@ MBC translates MITRE ATT&CK items into terms that focus on the malware analysis 
 └────────────────────────────┴─────────────────────────────────────────────────────────────────────┘ 
 ```
 
-Here, Capa has identified items of interest in the binary, matched them to rules based on MBC items, and returned the results. We've accurately identified that the Malware.Unknown.exe.malz sample has the capability to
+From this, CAPA suggests that the sample can:
 
-- Send and receive data
-- Do so over HTTP
-- Create and terminate processes
+* send and receive data
+* communicate over HTTP
+* open a URL
+* download content from a URL
+* create processes
+* perform self-deletion behavior
 
+This lines up well with what was already seen in FLOSS, PEview, PEStudio, and VirusTotal.
 
-Let's rerun Capa with the verbose flag. 
+---
+
+## Running CAPA with Verbose Output
+
+### `capa -v`
 
 ```bash
 C:\Users\sire\Desktop
@@ -382,17 +465,20 @@ namespace  host-interaction/process/create
 scope      basic block
 matches    0x4010E3
            0x401142
-
-
-
 ```
 
-There's a lot more output here! Capa identifies the rule that is triggered for the binary, the type of rule, and even the location in the binary where the rule is triggered in hex form! We can start to see the mechanism here for how Capa identifies things that trigger the rules - it uses the Vivisect parser to examine interesting strings and byte patterns and matches them against the rules.
+This output gives more detail. CAPA not only shows the capability, but also the type of rule and the location in the binary where that rule matched.
 
- run Capa one more time with a double verbose output
+That helps connect the high-level finding to the lower-level structure of the executable.
 
- ```bash
- C:\Users\sire\Desktop
+---
+
+## Running CAPA with Double Verbose Output
+
+### `capa -vv`
+
+```bash
+C:\Users\sire\Desktop
 λ capa Malware.Unknown.exe.malz -vv
 md5                     1d8562c0adcaee734d63f7baaca02f7c
 sha1                    be138820e72435043b065fbf3a786be274b147ab
@@ -509,14 +595,12 @@ basic block @ 0x4010E3 in function 0x401080
 basic block @ 0x401142 in function 0x401080
   or:
     api: CreateProcess @ 0x4011AD
-
-
-C:\Users\sire\Desktop
-λ
-
 ```
 
-There is tons of incredible information here and we can clearly see how Capa is now triggering the rules for this binary. For example:
+This output makes CAPA much easier to understand because it shows **why** the rules triggered.
+
+For example, the **download URL** capability is tied directly to the `URLDownloadToFile` API:
+
 ```bash
 download URL
 namespace  communication/http/client
@@ -528,9 +612,9 @@ function @ 0x401080
     api: URLDownloadToFile @ 0x4010D9
 ```
 
-The output for the "download URL to file" rule indicates that this rule triggers when the urlmon.URLDownloadToFile API call is located in the binary. It has identified this API call, provides the location in the binary where it is called, and provides some examples of where this kind of malware behavior has been seen before.
+That means CAPA did not guess. It found the exact API call in the binary and matched it to a known behavioral rule.
 
-Notice that for some rules, there are conditionals that can trigger the rule based on multiple criteria. For example:
+The same happens with **process creation**:
 
 ```bash
 create process on Windows (2 matches)
@@ -546,5 +630,43 @@ basic block @ 0x401142 in function 0x401080
     api: CreateProcess @ 0x4011AD
 ```
 
-This rule identifies process creation based on the existence of the ShellExecute API call located in shell32.dll or the CreateProcess API call located in kernel32.dll.
+This shows the malware has at least two possible ways to create processes:
 
+* `ShellExecute`
+* `CreateProcess`
+
+CAPA also explains the **self-delete** behavior by tying it to the deletion command string and the process creation APIs used to launch that command.
+
+That is one of the strongest parts of the analysis because several clues all support each other:
+
+* the command string from FLOSS
+* the ATT&CK result in CAPA
+* the process creation APIs
+* the deletion syntax in the command itself
+
+---
+
+## Main Findings
+
+From this static analysis, the main findings are:
+
+* The sample is widely detected as malicious in VirusTotal.
+* It is a valid **32-bit Windows PE executable**.
+* It contains strings that suggest **HTTP communication**.
+* It can likely **download a file from a URL**.
+* It shows signs of **process creation** using Windows APIs.
+* It contains commands related to **self-deletion**.
+* It includes a **PDB path**, which may give hints about the original development environment.
+* The findings from **FLOSS, PEview, PEStudio, and CAPA** all support each other.
+
+---
+
+## Conclusion
+
+This lab was a good example of how much can be learned from a malware sample **without running it**.
+
+By using **hashing, VirusTotal, FLOSS, PEview, PEStudio, and CAPA**, I was able to build an early picture of what the sample may do. The malware appears to use HTTP-related APIs, download content from a URL, create processes, and delete files as part of its behavior.
+
+At this stage, I am still careful not to overclaim what the malware does in full, because static analysis only gives part of the story. But it does give a strong enough foundation to move into the next phase of analysis with better direction.
+
+Based on these findings, this sample looks like a malware specimen with **downloader behavior, process execution capability, and signs of defense evasion through file deletion**. That makes it a strong candidate for deeper **dynamic analysis** in a controlled lab environment.
