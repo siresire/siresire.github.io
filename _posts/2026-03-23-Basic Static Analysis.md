@@ -223,7 +223,9 @@ In malware analysis, Windows APIs matter because malware uses them to interact w
 
 ### Checking the `URLDownloadToFile` API
 
-![alt text](/assets/img/TCM/001/image-10.png)
+<!-- ![alt text](/assets/img/TCM/001/image-10.png) -->
+
+<iframe src="https://learn.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/ms775123(v=vs.85)" width="100%" height="200"></iframe>
 
 The presence of `URLDownloadToFile` is important because it strongly suggests that this sample can **download a file from the internet onto the system**. That may point to a second-stage payload being dropped or retrieved later.
 
@@ -235,7 +237,7 @@ This supports what was already seen in FLOSS and strengthens the idea that the m
 
 [malapi.io](https://malapi.io/)
 
-<iframe src="https://malapi.io/" width="100%" height="600"></iframe>
+<iframe src="https://malapi.io/" width="100%" height="200"></iframe>
 
 **MalAPI** is a useful reference for Windows APIs that are commonly associated with malicious behavior. It brings together malware analysis context and Windows API information in one place.
 
