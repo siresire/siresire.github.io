@@ -178,7 +178,7 @@ A Portable Executable usually follows a standard structure. One of the first thi
 
 In the **IMAGE_NT_HEADERS** and **IMAGE_FILE_HEADER**, we can also see the timestamp that appears to show when the malware was compiled or built.
 
-![alt text](image-5.png)
+![alt text](/assets/img/TCM/001/image-5.png)
 
 That said, timestamps should be treated carefully. A timestamp does not always prove the real compile date. Some compilers are known to reuse old values, so this field can be misleading.
 
@@ -186,7 +186,7 @@ That said, timestamps should be treated carefully. A timestamp does not always p
 
 ## IMAGE_SECTION_HEADER `.text`
 
-![alt text](image-6.png)
+![alt text](/assets/img/TCM/001/image-6.png)
 
 One important thing to compare here is the **Virtual Size** and the **Size of Raw Data**.
 
@@ -203,7 +203,7 @@ For this particular section, the numbers are close enough that it does **not imm
 
 ## Section `.rdata` / Import Address Table
 
-![alt text](image-7.png)
+![alt text](/assets/img/TCM/001/image-7.png)
 
 The Import Address Table helps show what Windows API functions the malware depends on. Looking at those imports gives a better idea of what the executable was designed to do.
 
@@ -215,15 +215,15 @@ The Import Address Table helps show what Windows API functions the malware depen
 
 In malware analysis, Windows APIs matter because malware uses them to interact with the operating system. That can include creating files, opening network connections, downloading content, launching processes, or deleting files.
 
-![alt text](image-8.png)
+![alt text](/assets/img/TCM/001/image-8.png)
 
 ### How the Windows API works
 
-![alt text](image-9.png)
+![alt text](/assets/img/TCM/001/image-9.png)
 
 ### Checking the `URLDownloadToFile` API
 
-![alt text](image-10.png)
+![alt text](/assets/img/TCM/001/image-10.png)
 
 The presence of `URLDownloadToFile` is important because it strongly suggests that this sample can **download a file from the internet onto the system**. That may point to a second-stage payload being dropped or retrieved later.
 
@@ -251,17 +251,17 @@ Packing is a compression or obfuscation method used to make malware look differe
 
 A common clue is seeing **UPX**, which is a well-known packer.
 
-![alt text](image-11.png)
+![alt text](/assets/img/TCM/001/image-11.png)
 
 Packed malware often has a much smaller Import Address Table compared to an unpacked sample, because many APIs are resolved later after the malware unpacks itself in memory.
 
-![alt text](image-12.png)
+![alt text](/assets/img/TCM/001/image-12.png)
 
 That is why APIs such as **GetProcAddress** and **LoadLibraryA** become important in packed malware. They help the program locate and load other APIs dynamically.
 
 Another clue comes from comparing **Size of Raw Data** with **Virtual Size**.
 
-![alt text](image-13.png)
+![alt text](/assets/img/TCM/001/image-13.png)
 
 If the raw size is extremely small compared to the virtual size, or even zero in a suspicious way, that can be a strong sign that the file is packed.
 
@@ -273,19 +273,19 @@ So with packed malware, the file you first inspect may not reveal the full progr
 
 **PEStudio** is useful because it combines several analysis methods into one place. It quickly shows hashes, PE structure, libraries, suspicious strings, and indicators without executing the malware.
 
-![alt text](image-14.png)
+![alt text](/assets/img/TCM/001/image-14.png)
 
 When I loaded the sample into PEStudio, I could again see the file hashes, the **MZ header**, and the CPU architecture, which in this case is **32-bit**.
 
 ### Suspicious libraries and DLLs
 
-![alt text](image-15.png)
+![alt text](/assets/img/TCM/001/image-15.png)
 
 PEStudio also highlights suspicious libraries and APIs. That helps draw attention to functions that are often abused by malware.
 
 ### Strings and suspicious commands
 
-![alt text](image-16.png)
+![alt text](/assets/img/TCM/001/image-16.png)
 
 We can also see some of the same strings already found in FLOSS, including suspicious command-line patterns and API-related clues.
 
