@@ -8,30 +8,32 @@ render_with_liquid: false
 ---
 
 
+
 # Basic Dynamic Analysis Report
 
-This report documents the dynamic analysis of a malware sample, following a prior static analysis conducted [here](https://siresire.github.io/posts/Basic-Static-Analysis/)
+This report is based on my hands-on analysis of a malware sample, following my previous [static analysis](https://siresire.github.io/posts/Basic-Static-Analysis/).  
 
-
-The goal of this phase is to validate and observe the actual runtime behavior of the sample, specifically focusing on network activity, file system changes, and execution flow.
+In this phase, I wanted to see what the malware actually does when executed, rather than just looking at strings or API calls.
 
 ---
 
 ## 1. Objectives
 
-The main objectives of this analysis were:
+For this dynamic analysis, I focused on:
 
-- Validate indicators identified during static analysis  
-- Observe network communication with external resources  
-- Identify file system activity (file creation, deletion)  
-- Understand process execution and control flow  
-- Detect any anti-analysis or evasion techniques  
+- Confirming the indicators I found during static analysis  
+- Observing network communications made by the malware  
+- Identifying any files it creates or deletes on the host  
+- Understanding the sequence of process execution  
+- Checking for any anti-analysis behavior  
 
 ---
 
-## 2. Static Analysis Summary
+## 2. What I Found in Static Analysis
 
-### Extracted Strings
+Before running the sample, I had already pulled some important indicators:
+
+### Strings
 ```text
 cmd.exe /C ping 1.1.1.1 -n 1 -w 3000 > Nul & Del /f /q "%s"
 http://ssl-6582datamanager.helpdeskbros.local/favicon.ico
@@ -39,7 +41,7 @@ C:\Users\Public\Documents\CR433101.dat.exe
 Mozilla/5.0
 ````
 
-### Relevant API Calls
+### APIs
 
 * `URLDownloadToFileW`
 * `InternetOpenUrlW`
@@ -47,20 +49,30 @@ Mozilla/5.0
 * `CreateProcessW`
 * `ShellExecuteW`
 
+From this, I suspected that the malware would download a file, run it, and potentially delete itself under certain conditions.
+
 ---
 
-## 3. Dynamic Analysis Environment
+## 3. Tools and Environment
 
-The sample was executed in a controlled lab environment using:
+I set up a controlled lab for analysis:
 
-* **Wireshark** → network traffic analysis
-* **Process Monitor (Procmon)** → host activity monitoring
+* **Wireshark** to monitor network traffic
+* **Procmon (Process Monitor)** to watch file system and process activity
+
+This setup allowed me to see exactly what the malware was doing without risking my main system.
 
 ---
 
 ## 4. Network Analysis
 
-Wireshark filter used:
+I noticed the URL in static analysis:
+
+```text
+http://ssl-6582datamanager.helpdeskbros.local/favicon.ico
+```
+
+I used Wireshark to check if the malware actually tried to access it. My filter was:
 
 ```text
 http.request.full_uri contains favicon.ico
@@ -68,27 +80,19 @@ http.request.full_uri contains favicon.ico
 
 ![alt text](/assets/img/TCM/002/image.png)
 
-Observed request:
-
-```text
-http://ssl-6582datamanager.helpdeskbros.local/favicon.ico
-```
+The malware made an HTTP GET request to the domain, and the User-Agent matched what I had in the strings (`Mozilla/4.0`).
 
 ![alt text](/assets/img/TCM/002/image-1.png)
 
-### Findings
-
-* Outbound HTTP request confirmed
-* User-Agent observed: `Mozilla/4.0`
-* Matches static analysis indicator
+**Observation:** This confirmed that the URL in the static analysis was actively used, not just embedded in the binary.
 
 ---
 
 ## 5. Host-Based Analysis
 
-### 5.1 File System Activity
+### 5.1 File System Behavior
 
-Procmon filter:
+I opened Procmon and filtered on the malware process:
 
 ```
 Process Name is Malware.Unknown.exe
@@ -96,101 +100,99 @@ Process Name is Malware.Unknown.exe
 
 ![alt text](/assets/img/TCM/002/image-2.png)
 
-Filtered file operations:
+I focused on file operations and saw:
 
 ![alt text](/assets/img/TCM/002/image-3.png)
-
-### Findings
-
-File created:
+The malware created:
 
 ```text
 C:\Users\Public\Documents\CR433101.dat.exe
 ```
 
+This matched the path I had already seen during static analysis.
+
 ---
 
 ### 5.2 Command Execution & Self-Deletion
 
-Command observed:
+I also noticed a command string in static analysis:
 
 ```text
 cmd.exe /C ping 1.1.1.1 -n 1 -w 3000 > Nul & Del /f /q "%s"
 ```
 
+I watched Procmon for that command and saw:
+
 ![alt text](/assets/img/TCM/002/image-4.png)
 
-### Findings
-
-* Execution of `cmd.exe`
-* Network connectivity check via `ping`
-* Conditional self-deletion
+**Observation:** The malware runs `cmd.exe` to ping `1.1.1.1`, and if the ping fails, it deletes itself. I realized this is a simple anti-analysis mechanism: if the environment isn’t “normal” (like a sandbox), the malware self-deletes.
 
 ---
 
-## 6. Execution Flow
+## 6. Execution Flow (Based on My Observations)
 
-### If URL is reachable
+From running the sample, I mapped the execution logic:
 
-* Connect to remote server
-* Download payload (`favicon.ico`)
-* Save as `CR433101.dat.exe`
-* Execute payload
+**If the URL is reachable:**
 
-### If URL is not reachable
+* Connects to the remote server
+* Downloads `favicon.ico`
+* Saves it as `CR433101.dat.exe`
+* Executes the downloaded file
 
-* Perform connectivity check
-* Delete original binary
-* Terminate execution
+**If the URL is not reachable:**
+
+* Performs a ping check to `1.1.1.1`
+* Deletes the original binary
+* Stops execution
 
 ---
 
 ## 7. Indicators of Compromise (IOCs)
 
-### Network
+**Network**
 
 * `http://ssl-6582datamanager.helpdeskbros.local/favicon.ico`
 
-### Host
+**Host**
 
 * `C:\Users\Public\Documents\CR433101.dat.exe`
-* `cmd.exe /C ping 1.1.1.1 -n 1 -w 3000 > Nul & Del /f /q "%s"`
+* Command: `cmd.exe /C ping 1.1.1.1 -n 1 -w 3000 > Nul & Del /f /q "%s"`
 
 ---
 
-## 8. MITRE ATT&CK Mapping
-
-The observed behaviors were mapped to the MITRE ATT&CK framework as follows:
+## 8. MITRE ATT&CK Mapping (Based on What I Observed)
 
 | Tactic                  | Technique                                                 | ID        | Evidence                                             |
 | ----------------------- | --------------------------------------------------------- | --------- | ---------------------------------------------------- |
-| Execution               | Command and Scripting Interpreter (Windows Command Shell) | T1059.003 | Use of `cmd.exe` to execute ping and delete commands |
-| Defense Evasion         | Indicator Removal on Host                                 | T1070.004 | Self-deletion using `Del /f /q`                      |
-| Defense Evasion         | System Checks                                             | T1497     | Ping to `1.1.1.1` used to verify network environment |
+| Execution               | Command and Scripting Interpreter (Windows Command Shell) | T1059.003 | I saw `cmd.exe` executing ping and deletion commands |
+| Defense Evasion         | Indicator Removal on Host                                 | T1070.004 | Malware deletes itself if ping fails                 |
+| Defense Evasion         | System Checks                                             | T1497     | Ping check used to determine environment             |
 | Command and Control     | Application Layer Protocol: Web Protocols                 | T1071.001 | HTTP request to remote domain                        |
 | Command and Control     | Ingress Tool Transfer                                     | T1105     | Download of payload (`favicon.ico`)                  |
-| Execution               | User Execution (Indirect)                                 | T1204     | Execution of downloaded payload                      |
-| Persistence / Execution | Create Process                                            | T1106     | Use of Windows API (`CreateProcessW`)                |
+| Execution               | User Execution (Indirect)                                 | T1204     | Execution of the downloaded payload                  |
+| Execution / Persistence | Create Process                                            | T1106     | Use of `CreateProcessW` API                          |
 
 ---
 
 ## 9. Conclusion
 
-The dynamic analysis confirms that the malware:
+By running the malware , I confirmed:
 
-* Communicates with a remote server over HTTP
-* Downloads and writes a secondary payload to disk
-* Executes the downloaded file
-* Uses a simple anti-analysis technique (self-deletion based on connectivity check)
+* The network indicators from static analysis are real and active
+* The malware downloads a payload and writes it to disk
+* It uses a simple anti-analysis mechanism (self-deletion)
+* Observed behavior matches what I expected from the static indicators
 
-These behaviors are consistent with findings from static analysis and align with multiple MITRE ATT&CK techniques.
+This step helped me connect the dots between **static clues** and **actual runtime behavior**.
 
 ---
 
-## 10. Next Steps
+## 10. Next Steps (My Plan)
 
-* Perform debugging using **x64dbg** to trace execution flow
-* Analyze the dropped payload (`CR433101.dat.exe`)
-* Expand lab setup (INetSim, FakeDNS) for deeper behavior analysis
+* Start debugging the payload with **x64dbg** to trace its execution in detail
+* Analyze the dropped file `CR433101.dat.exe`
+* Expand my lab with INetSim and sandboxing to test more evasion techniques
 
+---
 
