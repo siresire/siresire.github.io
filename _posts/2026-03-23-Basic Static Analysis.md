@@ -225,6 +225,7 @@ In malware analysis, Windows APIs matter because malware uses them to interact w
 
 ![alt text](/assets/img/TCM/001/image-10.png)
 
+
 The presence of `URLDownloadToFile` is important because it strongly suggests that this sample can **download a file from the internet onto the system**. That may point to a second-stage payload being dropped or retrieved later.
 
 This supports what was already seen in FLOSS and strengthens the idea that the malware may not be acting alone.
