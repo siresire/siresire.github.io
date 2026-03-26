@@ -66,7 +66,7 @@ Wireshark filter used:
 http.request.full_uri contains favicon.ico
 ```
 
-![alt text](image.png)
+![alt text](/assets/img/TCM/002/image.png)
 
 Observed request:
 
@@ -74,7 +74,7 @@ Observed request:
 http://ssl-6582datamanager.helpdeskbros.local/favicon.ico
 ```
 
-![alt text](image-1.png)
+![alt text](/assets/img/TCM/002/image-1.png)
 
 ### Findings
 
@@ -94,11 +94,11 @@ Procmon filter:
 Process Name is Malware.Unknown.exe
 ```
 
-![alt text](image-2.png)
+![alt text](/assets/img/TCM/002/image-2.png)
 
 Filtered file operations:
 
-![alt text](image-3.png)
+![alt text](/assets/img/TCM/002/image-3.png)
 
 ### Findings
 
@@ -118,7 +118,7 @@ Command observed:
 cmd.exe /C ping 1.1.1.1 -n 1 -w 3000 > Nul & Del /f /q "%s"
 ```
 
-![alt text](image-4.png)
+![alt text](/assets/img/TCM/002/image-4.png)
 
 ### Findings
 
