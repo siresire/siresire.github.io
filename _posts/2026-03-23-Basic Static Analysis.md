@@ -2,7 +2,7 @@
 title: Basic Static Analysis
 author: siresire
 date: 2026-03-23 18:10:00 +0800
-categories: [Malware, SOC]
+categories: [Malware,SOC, Blue Team]
 tags: [floss, PEView, PEStudio, CAPA]
 render_with_liquid: false
 ---

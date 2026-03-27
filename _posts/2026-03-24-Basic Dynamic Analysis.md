@@ -2,7 +2,7 @@
 title: Basic Dynamic Analysis
 author: siresire
 date: 2026-03-24 18:10:00 +0800
-categories: [Malware, SOC]
+categories: [Malware,SOC, Blue Team]
 tags: [Wireshark,Procmon ]
 render_with_liquid: false
 ---
