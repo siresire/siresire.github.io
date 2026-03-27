@@ -1,5 +1,5 @@
 ---
-title: Malware challenge I
+title: MALWARE CHALLENGE I
 author: siresire
 date: 2026-03-24 18:10:00 +0800
 categories: [Malware,SOC, Blue Team]
@@ -8,7 +8,7 @@ render_with_liquid: false
 ---
 
 
-# MALWARE CHALLENGE I:  RAT.Unknown.exe
+# The RAT.Unknown.exe
 
 ### Instructions
 
