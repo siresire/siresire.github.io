@@ -36,7 +36,7 @@ What stood out to me was how well the static clues matched the runtime behavior.
 
 ## Basic static analysis
 
-> 1. File hashes and signatures
+> **File hashes and signatures**
 
 ```bash
 C:\Users\sire\Desktop
@@ -49,12 +49,12 @@ C:\Users\sire\Desktop
 
 From [VirusTotal](https://www.virustotal.com/gui/file/248d491f89a10ec3289ec4ca448b19384464329c442bac395f680c4f3a345c8c/details), the sample was flagged by multiple vendors as malicious.
 
-virus total results
+virus total results [↗](https://www.virustotal.com/gui/file/248d491f89a10ec3289ec4ca448b19384464329c442bac395f680c4f3a345c8c/details)
 <iframe src="https://www.virustotal.com/gui/file/248d491f89a10ec3289ec4ca448b19384464329c442bac395f680c4f3a345c8c/details" width="100%" height="200"></iframe>
 
 
 
-> 2. FLOSS
+>> FLOSS
 
 
 After running FLOSS, I found some interesting strings:
@@ -92,7 +92,7 @@ Unknown error
 * A string that clearly points to remote command execution
 * Signs that the malware may have been written in Nim
 
-> 3. PEStudio
+>>  PEStudio
 
 Running the malware in PEStudio:
 
@@ -104,7 +104,7 @@ We can see the malware is a **64-bit portable executable**.
 
 ## Basic dynamic Analysis
 
-### Wireshark packet analysis
+>>  Wireshark
 
 When running the malware, the first thing I got was a dialog box with the message `NO SOUP FOR YOU`. This happened when the DNS setup was not working correctly.
 
@@ -151,7 +151,7 @@ From the strings extracted during static analysis, one path immediately stood ou
 
 That path was worth hunting because it usually points to persistence.
 
-> 1. Procmon
+>>  Procmon
 
 After filtering Procmon for the malware process and file-related activity, I saw several operations such as create file, close file, and query security file. To narrow it down further, I filtered around the Startup path found during static analysis.
 
@@ -178,7 +178,7 @@ The name `mscordll.exe` also looks intentionally deceptive. It resembles a Micro
 
 ## Host based indicators network based - Open sockets and TCP connections
 
-> TCPView
+>>  TCPView
 
 After running the malware, TCPView showed the process listening on `0.0.0.0`, meaning all local interfaces, on local port `5555`.
 
@@ -208,7 +208,7 @@ I then tested a command such as `ipconfig`, and the malware returned a Base64-en
 
 At this point, I could confidently say the malware had command execution capability. It behaves like a small RAT with a bind shell.
 
-> Procmon
+>>  Procmon
 
 From Procmon, I also filtered for successful TCP activity after sending remote commands.
 
