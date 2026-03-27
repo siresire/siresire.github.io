@@ -13,7 +13,7 @@ render_with_liquid: false
 ### Instructions
 
 
- Analyst,
+ Analyst,s
 
 Excellent work with the last sample. Please take a look at the one in this directory. Our IR team said it might have command execution capabilities, but we're not sure.
 
@@ -49,9 +49,13 @@ C:\Users\sire\Desktop
 
 From [VirusTotal](https://www.virustotal.com/gui/file/248d491f89a10ec3289ec4ca448b19384464329c442bac395f680c4f3a345c8c/details), the sample was flagged by multiple vendors as malicious.
 
-[virus total results](https://www.virustotal.com/gui/file/248d491f89a10ec3289ec4ca448b19384464329c442bac395f680c4f3a345c8c/details)
+virus total results
+<iframe src="https://www.virustotal.com/gui/file/248d491f89a10ec3289ec4ca448b19384464329c442bac395f680c4f3a345c8c/details" width="100%" height="200"></iframe>
+
+
 
 > 2. FLOSS
+
 
 After running FLOSS, I found some interesting strings:
 
