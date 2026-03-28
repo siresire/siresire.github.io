@@ -7,7 +7,6 @@ tags: [Wireshark,Procmon,FLOSS,PEStudio,Procmon,TCPView,MITRE ATT&CK ]
 render_with_liquid: false
 ---
 
-# MALWARE CHALLENGE II
 
 This report covers two malware challenges:
 

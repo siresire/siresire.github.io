@@ -8,9 +8,6 @@ render_with_liquid: false
 ---
 
 
-
-# Basic Dynamic Analysis Report
-
 This report is based on my hands-on analysis of a malware sample, following my previous [static analysis](https://siresire.github.io/posts/Basic-Static-Analysis/).  
 
 In this phase, I wanted to see what the malware actually does when executed, rather than just looking at strings or API calls.

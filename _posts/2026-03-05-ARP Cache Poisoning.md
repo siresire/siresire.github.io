@@ -7,7 +7,6 @@ tags: [ARP, MITM, Scapy, Wireshark, tcpdump]
 render_with_liquid: false
 ---
 
-# ARP Cache Poisoning
 
 ## Objective
 

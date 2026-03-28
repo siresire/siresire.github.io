@@ -8,7 +8,6 @@ render_with_liquid: false
 ---
 
 
-# Basic Static Analysis
 
 In this lab, I explored out a basic static malware analysis on a suspicious Windows executable without running it. The goal was to collect useful indicators early, understand what the sample might be capable of, and build a solid starting point for deeper analysis later.
 
