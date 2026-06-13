@@ -3,7 +3,7 @@ title: Shellcode Analysis
 author: siresire
 date: 2026-06-12 18:10:00 +0800
 categories: [Malware,SOC, Blue Team]
-tags: [PEstudion,scdgb] 
+tags: [PEstudion,scdgb,x64dbg.HxD,Cutter] 
 render_with_liquid: false
 ---
 
