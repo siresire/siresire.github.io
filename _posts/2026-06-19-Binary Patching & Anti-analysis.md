@@ -8,7 +8,7 @@ render_with_liquid: false
 ---
 
 
-# Binary Patching: Bypassing Conditional Execution in an x86 Malware Sample
+# Bypassing Conditional Execution in an x86 Malware Sample
 
 ## Objective
 
@@ -16,7 +16,6 @@ During malware analysis, analysts often encounter binaries that intentionally pr
 
 Instead of recreating the expected environment, an analyst can **patch the binary** to force execution down the desired code path.
 
-In this exercise, we analyze a small Nim-compiled executable using **Cutter**, understand its control flow at the assembly level, and modify a single conditional jump instruction to force the payload to execute.
 
 ---
 
